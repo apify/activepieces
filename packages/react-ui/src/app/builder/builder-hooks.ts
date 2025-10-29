@@ -11,6 +11,7 @@ import {
 import { usePrevious } from 'react-use';
 import { create, useStore } from 'zustand';
 
+import { useEmbedding } from '@/components/embed-provider';
 import { Messages } from '@/components/ui/chat/chat-message-list';
 import { flowsApi } from '@/features/flows/lib/flows-api';
 import { PromiseQueue } from '@/lib/promise-queue';
@@ -76,7 +77,6 @@ export enum LeftSideBarType {
   RUNS = 'runs',
   VERSIONS = 'versions',
   RUN_DETAILS = 'run-details',
-  AI_COPILOT = 'chat',
   NONE = 'none',
 }
 
@@ -102,7 +102,6 @@ export type BuilderState = {
   leftSidebar: LeftSideBarType;
   rightSidebar: RightSideBarType;
   selectedStep: string | null;
-  canExitRun: boolean;
   activeDraggingStep: string | null;
   saving: boolean;
   /** change this value to trigger the step form to set its values from the step */
@@ -191,13 +190,7 @@ export type BuilderState = {
 const DEFAULT_PANNING_MODE_KEY_IN_LOCAL_STORAGE = 'defaultPanningMode';
 export type BuilderInitialState = Pick<
   BuilderState,
-  | 'flow'
-  | 'flowVersion'
-  | 'readonly'
-  | 'run'
-  | 'canExitRun'
-  | 'sampleData'
-  | 'sampleDataInput'
+  'flow' | 'flowVersion' | 'readonly' | 'run' | 'sampleData' | 'sampleDataInput'
 >;
 
 export type BuilderStore = ReturnType<typeof createBuilderStore>;
@@ -245,7 +238,6 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
       run: initialState.run,
       saving: false,
       selectedStep: initiallySelectedStep,
-      canExitRun: initialState.canExitRun,
       activeDraggingStep: null,
       rightSidebar:
         initiallySelectedStep && !isEmptyTriggerInitiallySelected
@@ -371,10 +363,7 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
       exitStepSettings: () =>
         set((state) => ({
           rightSidebar: RightSideBarType.NONE,
-          leftSidebar:
-            state.leftSidebar === LeftSideBarType.AI_COPILOT
-              ? LeftSideBarType.NONE
-              : state.leftSidebar,
+          leftSidebar: state.leftSidebar,
           selectedStep: null,
           selectedBranchIndex: null,
           askAiButtonProps: null,
@@ -576,12 +565,7 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>
       askAiButtonProps: null,
       setAskAiButtonProps: (props) => {
         return set((state) => {
-          let leftSidebar = state.leftSidebar;
-          if (props) {
-            leftSidebar = LeftSideBarType.AI_COPILOT;
-          } else if (state.leftSidebar === LeftSideBarType.AI_COPILOT) {
-            leftSidebar = LeftSideBarType.NONE;
-          }
+          const leftSidebar = state.leftSidebar;
 
           let rightSidebar = state.rightSidebar;
           if (props && props.type === FlowOperationType.UPDATE_ACTION) {
@@ -1058,12 +1042,13 @@ function determineInitiallySelectedStep(
   return firstInvalidStep?.name ?? 'trigger';
 }
 
-export const useShowBuilderIsSavingWarningBeforeLeaving = (
-  isInEmbeddingMode: boolean,
-) => {
+export const useShowBuilderIsSavingWarningBeforeLeaving = () => {
+  const {
+    embedState: { isEmbedded },
+  } = useEmbedding();
   const isSaving = useBuilderStateContext((state) => state.saving);
   useEffect(() => {
-    if (isInEmbeddingMode) {
+    if (isEmbedded) {
       return;
     }
     const message = t(
@@ -1084,5 +1069,5 @@ export const useShowBuilderIsSavingWarningBeforeLeaving = (
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isSaving, isInEmbeddingMode]);
+  }, [isSaving, isEmbedded]);
 };

@@ -5,7 +5,6 @@ import {
 import {
     apId,
     FlowStatus,
-    NotificationStatus,
     Platform,
     PlatformRole,
     PrincipalType,
@@ -13,11 +12,10 @@ import {
     User,
 } from '@activepieces/shared'
 import { faker } from '@faker-js/faker'
-import { FastifyBaseLogger, FastifyInstance } from 'fastify'
+import { FastifyInstance } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 import { initializeDatabase } from '../../../../src/app/database'
 import { databaseConnection } from '../../../../src/app/database/database-connection'
-import { stripeHelper } from '../../../../src/app/ee/platform/platform-plan/stripe-helper'
 import { setupServer } from '../../../../src/app/server'
 import { generateMockToken } from '../../../helpers/auth'
 import {
@@ -29,17 +27,12 @@ import {
 } from '../../../helpers/mocks'
 
 let app: FastifyInstance | null = null
-let mockLog: FastifyBaseLogger
 
 
 beforeAll(async () => {
     await initializeDatabase({ runMigrations: false })
     app = await setupServer()
-    mockLog = app!.log!
 
-    stripeHelper(mockLog).createCustomer = jest
-        .fn()
-        .mockResolvedValue(faker.string.uuid())
 })
 
 afterAll(async () => {
@@ -191,7 +184,6 @@ describe('Project API', () => {
 
             const request: UpdateProjectPlatformRequest = {
                 displayName: faker.animal.bird(),
-                notifyStatus: NotificationStatus.NEVER,
                 plan: {
                     tasks,
                 },
@@ -212,7 +204,6 @@ describe('Project API', () => {
 
             expect(responseBody.id).toBe(mockProject.id)
             expect(responseBody.displayName).toBe(request.displayName)
-            expect(responseBody.notifyStatus).toBe(request.notifyStatus)
         })
 
         it('it should update project as platform owner with api key', async () => {
@@ -221,7 +212,6 @@ describe('Project API', () => {
             const tasks = faker.number.int({ min: 1, max: 100000 })
             const request = {
                 displayName: faker.animal.bird(),
-                notifyStatus: NotificationStatus.NEVER,
                 plan: {
                     tasks,
                 },
@@ -258,7 +248,6 @@ describe('Project API', () => {
             const tasks = faker.number.int({ min: 1, max: 100000 })
             const request: UpdateProjectPlatformRequest = {
                 displayName: faker.animal.bird(),
-                notifyStatus: NotificationStatus.NEVER,
                 plan: {
                     tasks,
                 },
@@ -277,7 +266,6 @@ describe('Project API', () => {
             expect(response?.statusCode).toBe(StatusCodes.OK)
             const responseBody = response?.json()
             expect(responseBody.displayName).toBe(request.displayName)
-            expect(responseBody.notifyStatus).toBe(request.notifyStatus)
             expect(responseBody.plan.tasks).toEqual(tasks)
         })
 
@@ -312,7 +300,6 @@ describe('Project API', () => {
 
             const request: UpdateProjectPlatformRequest = {
                 displayName: faker.animal.bird(),
-                notifyStatus: NotificationStatus.NEVER,
             }
             const response = await app?.inject({
                 method: 'POST',
@@ -344,7 +331,6 @@ describe('Project API', () => {
 
             const request: UpdateProjectPlatformRequest = {
                 displayName: faker.animal.bird(),
-                notifyStatus: NotificationStatus.NEVER,
             }
 
             // act
@@ -390,7 +376,6 @@ describe('Project API', () => {
 
             const request: UpdateProjectPlatformRequest = {
                 displayName: faker.animal.bird(),
-                notifyStatus: NotificationStatus.NEVER,
                 metadata,
                 plan: {
                     tasks,
@@ -411,7 +396,6 @@ describe('Project API', () => {
             expect(response?.statusCode).toBe(StatusCodes.OK)
             expect(responseBody.id).toBe(mockProject.id)
             expect(responseBody.displayName).toBe(request.displayName)
-            expect(responseBody.notifyStatus).toBe(request.notifyStatus)
             expect(responseBody.metadata).toEqual(metadata)
         })
     })
