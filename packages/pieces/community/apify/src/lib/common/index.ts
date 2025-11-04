@@ -17,6 +17,14 @@ type Item = {
   name?: string;
 };
 
+export type ActorBuild = Build & {
+  actorDefinition?: {
+    input?: {
+      properties?: Record<string, { prefill?: unknown | null; }>;
+    };
+  };
+};
+
 // Memory options for actor/task runs
 export const MEMORY_OPTIONS = [
   { value: 128, label: '128 MB' },
@@ -73,6 +81,7 @@ export const listActors = async (apiKey: string, actorSource: string): Promise<D
         offset: 0,
         sortBy: ActorListSortBy.LAST_RUN_STARTED_AT,
         desc: true,
+        limit: 1000,
       });
       return recentActors.items.map(mapActorToDropdownOption);
     }
@@ -103,10 +112,8 @@ export const fetchTaskInputSchema = async (apiKey: string, taskId: string): Prom
   return inputSchema;
 };
 
-export const getDefaultValuesFromBuild = (build: Build): Dictionary => {
-  const properties = (build as any)?.actorDefinition?.input?.properties as
-    | Record<string, { prefill?: unknown | null; }>
-    | undefined;
+export const getDefaultValuesFromBuild = (build: ActorBuild): Dictionary => {
+  const properties = build?.actorDefinition?.input?.properties;
 
   if (!properties) {
     return {};
