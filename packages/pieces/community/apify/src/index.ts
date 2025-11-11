@@ -3,7 +3,7 @@ import { PieceCategory } from '@activepieces/shared';
 import { getDatasetItems } from './lib/actions/get-dataset-items';
 import { getActors } from './lib/actions/get-actors';
 import { getLastRun } from './lib/actions/get-last-run';
-import { runActor } from './lib/actions/start-actor';
+import { runActor } from './lib/actions/run-actor';
 import { createApifyClient } from './lib/common';
 import { getKeyValueStoreRecord } from './lib/actions/get-key-value-store-record';
 import { scrapeSingleUrl } from './lib/actions/scrape-single-url';
