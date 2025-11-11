@@ -111,12 +111,6 @@ export const fetchActorInputSchema = async (apiKey: string, actorId: string): Pr
   return build;
 };
 
-export const fetchTaskInputSchema = async (apiKey: string, taskId: string): Promise<Dictionary | Dictionary[] | undefined> => {
-  const client = createApifyClient(apiKey);
-  const inputSchema = await client.task(taskId).getInput();
-  return inputSchema;
-};
-
 export const getDefaultValuesFromBuild = (build: ActorBuild): Dictionary => {
   const properties = build?.actorDefinition?.input?.properties;
 
@@ -271,7 +265,7 @@ export const createMemoryProperty = (runType: RunType) => Property.StaticDropdow
 export const createTimeoutProperty = (runType: RunType) => Property.Number({
   displayName: 'Timeout (seconds)',
   required: false,
-  description: `Max run duration in seconds. By default, the run uses a timeout specified in the ${runType === RunType.ACTOR ? 'default run configuration for the Actor' : 'task settings'}.`
+  description: `Optional timeout for the run, in seconds. By default, the run uses a timeout specified in the ${runType === RunType.ACTOR ? 'default run configuration for the Actor' : 'task settings'}.`
 });
 
 export const createWaitForFinishProperty = (runType: RunType) => Property.Checkbox({
@@ -353,7 +347,7 @@ export const createTaskIdProperty = () => Property.Dropdown({
 });
 
 const createInputBodyProperty = (runType: RunType, defaultValue?: object) => Property.Json({
-  displayName: 'Input (JSON)',
+  displayName: 'Input Override JSON',
   description: `JSON input for the ${runType} run, which you can find on the ${runType} input page in Apify Console. If empty, the run uses the input specified in the default run configuration.`,
   required: true,
   defaultValue
@@ -383,15 +377,11 @@ export const createTaskInputProperty = () => Property.DynamicProperties({
   displayName: 'Input',
   required: true,
   refreshers: ['auth', 'taskid'],
-  props: async (propsValue) => {
-    const apiKey = propsValue['auth'] as ApifyAuth;
-    const taskId = propsValue['taskid'] as unknown as string;
-    const defaultInputs = await fetchTaskInputSchema(apiKey.apikey, taskId);
-
+  props: async () => {
     return {
       body: createInputBodyProperty(
         RunType.TASK,
-        defaultInputs
+        {},
       )
     };
   }
