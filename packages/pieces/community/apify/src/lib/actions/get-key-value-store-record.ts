@@ -1,4 +1,4 @@
-import { createAction, Property } from '@activepieces/pieces-framework';
+import { createAction, OAuth2PropertyValue, Property } from '@activepieces/pieces-framework';
 import { apifyAuth } from '../..';
 import { 
   createApifyClient, 
@@ -21,7 +21,7 @@ export const getKeyValueStoreRecord = createAction({
       displayName: 'Store',
       description: 'The ID of the Key-Value Store',
       options: async (props) => {
-        return createDropdownOptions(props['auth'], listStores);
+        return createDropdownOptions(props['auth'] as OAuth2PropertyValue, listStores);
       }
     }),
     recordKey: Property.Dropdown({
@@ -38,15 +38,14 @@ export const getKeyValueStoreRecord = createAction({
         }
 
         const storeId = props['store'] as string;
-        return createDropdownOptions(props['auth'], (apiKey) => listRecords(apiKey, storeId));
+        return createDropdownOptions(props['auth'] as OAuth2PropertyValue, (token) => listRecords(token, storeId));
       }
     }),
   },
   async run(context) {
-    const apifyToken = context.auth.apikey;
     const { store, recordKey } = context.propsValue;
 
-    const client = createApifyClient(apifyToken);
+    const client = createApifyClient(context.auth);
 
     try {
       const record = await client.keyValueStore(store).getRecord(recordKey);

@@ -29,11 +29,10 @@ export const runActor = createAction({
     waitForFinish: createWaitForFinishProperty(RunType.ACTOR)
   },
   async run(context) {
-    const apifyToken = context.auth.apikey;
     const { input, actorid, timeout, build, memory, waitForFinish } = context.propsValue;
     const body = input['body'];
 
-    const client = createApifyClient(apifyToken);
+    const client = createApifyClient(context.auth);
 
     const runOptions = createRunOptions({ timeout, memory, build });
     const run = await client.actor(actorid).call(body, runOptions);

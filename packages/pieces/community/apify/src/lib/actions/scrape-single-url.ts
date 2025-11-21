@@ -44,9 +44,8 @@ export const scrapeSingleUrl = createAction({
     }),
   },
   async run(context) {
-    const apifyToken = context.auth.apikey;
     const { crawlerType, url } = context.propsValue;
-    const client = createApifyClient(apifyToken);
+    const client = createApifyClient(context.auth);
 
     try {
       new URL(url);

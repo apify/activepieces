@@ -9,19 +9,16 @@ import { runTask } from './lib/actions/run-task';
 import { watchTaskRunsTrigger } from './lib/triggers/watch-task-runs';
 import { watchActorRunsTrigger } from './lib/triggers/watch-actor-runs';
 
-export const apifyAuth = PieceAuth.CustomAuth({
-  description: 'Enter API key authentication details',
-  props: {
-    apikey: PieceAuth.SecretText({
-      displayName: 'API Key',
-      required: true,
-      description:
-        'Find your API key on Apify in the settings, API & Integrations section.',
-    }),
-  },
+export const apifyAuth = PieceAuth.OAuth2({
+  description: 'Connect to your Apify account',
+  authUrl: 'https://console.apify.com/authorize/oauth',
+  tokenUrl: 'https://console-backend.apify.com/oauth/apps/token',
+  required: true,
+  scope: ['profile', 'full_api_access'],
+
   validate: async ({ auth }) => {
     try {
-      const client = createApifyClient(auth.apikey);
+      const client = createApifyClient(auth);
       await client.user('me').get();
       return { valid: true };
     } catch (error: any) {
@@ -38,8 +35,7 @@ export const apifyAuth = PieceAuth.CustomAuth({
       };
     }
   },
-  required: true,
-});
+})
 
 export const apify = createPiece({
   displayName: 'Apify',
