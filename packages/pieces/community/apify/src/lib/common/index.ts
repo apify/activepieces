@@ -7,12 +7,8 @@ import {
   WebhookCondition, 
   WebhookEventType 
 } from 'apify-client';
-import { Property } from '@activepieces/pieces-framework';
+import { OAuth2PropertyValue, Property } from '@activepieces/pieces-framework';
 import { createHash } from 'crypto';
-
-export type ApifyAuth = {
-  apikey: string;
-};
 
 type DropdownOption = {
   value: string;
@@ -79,9 +75,9 @@ export const STATUS_OPTIONS = [
 ];
 
 // Helper to create an Apify client instance with tracking header
-export const createApifyClient = (apiKey: string): ApifyClient => {
+export const createApifyClient = (auth: OAuth2PropertyValue): ApifyClient => {
   return new ApifyClient({
-    token: apiKey,
+    token: auth.access_token,
     requestInterceptors: [
       (request) => {
         if (!request.headers) {
@@ -112,8 +108,8 @@ const mapTaskToDropdownOption = (item: Item): DropdownOption => {
   };
 };
 
-export const listActors = async (apiKey: string, actorSource: string): Promise<DropdownOption[]> => {
-  const client = createApifyClient(apiKey);
+export const listActors = async (auth: OAuth2PropertyValue, actorSource: string): Promise<DropdownOption[]> => {
+  const client = createApifyClient(auth);
 
   try {
     if (actorSource === 'recent') {
@@ -138,8 +134,8 @@ export const listActors = async (apiKey: string, actorSource: string): Promise<D
   }
 };
 
-export const fetchActorInputSchema = async (apiKey: string, actorId: string): Promise<Build | undefined> => {
-  const client = createApifyClient(apiKey);
+export const fetchActorInputSchema = async (auth: OAuth2PropertyValue, actorId: string): Promise<Build | undefined> => {
+  const client = createApifyClient(auth);
   const defaultBuild = await client.actor(actorId).defaultBuild();
   const build = await defaultBuild.get();
 
@@ -164,8 +160,8 @@ export const getDefaultValuesFromBuild = (build: ActorBuild): Dictionary => {
   return defaultValues;
 };
 
-export const listTasks = async (apiKey: string): Promise<DropdownOption[]> => {
-  const client = createApifyClient(apiKey);
+export const listTasks = async (auth: OAuth2PropertyValue): Promise<DropdownOption[]> => {
+  const client = createApifyClient(auth);
 
   try {
     const tasks = await client.tasks().list({
@@ -180,8 +176,8 @@ export const listTasks = async (apiKey: string): Promise<DropdownOption[]> => {
   }
 };
 
-export const listDatasets = async (apiKey: string): Promise<DropdownOption[]> => {
-  const client = createApifyClient(apiKey);
+export const listDatasets = async (auth: OAuth2PropertyValue): Promise<DropdownOption[]> => {
+  const client = createApifyClient(auth);
 
   try {
     const dataset = await client.datasets().list({
@@ -197,8 +193,8 @@ export const listDatasets = async (apiKey: string): Promise<DropdownOption[]> =>
   }
 };
 
-export const listStores = async (apiKey: string): Promise<DropdownOption[]> => {
-  const client = createApifyClient(apiKey);
+export const listStores = async (auth: OAuth2PropertyValue): Promise<DropdownOption[]> => {
+  const client = createApifyClient(auth);
 
   try {
     const stores = await client.keyValueStores().list({
@@ -214,8 +210,8 @@ export const listStores = async (apiKey: string): Promise<DropdownOption[]> => {
   }
 };
 
-export const listRecords = async (apiKey: string, storeId: string): Promise<DropdownOption[]> => {
-  const client = createApifyClient(apiKey);
+export const listRecords = async (auth: OAuth2PropertyValue, storeId: string): Promise<DropdownOption[]> => {
+  const client = createApifyClient(auth);
 
   try {
     const records = await client.keyValueStore(storeId).listKeys();
@@ -260,8 +256,8 @@ export const isBinaryContentType = (contentType: string): boolean => {
 
 // Create dropdown options for a list of items
 export const createDropdownOptions = async (
-  auth: unknown,
-  fetchItems: (apiKey: string) => Promise<DropdownOption[]>
+  auth: OAuth2PropertyValue,
+  fetchItems: (auth: OAuth2PropertyValue) => Promise<DropdownOption[]>
 ): Promise<{ disabled: boolean; options: DropdownOption[]; }> => {
   if (!auth) {
     return {
@@ -271,8 +267,7 @@ export const createDropdownOptions = async (
   }
 
   try {
-    const apifyAuth = auth as ApifyAuth;
-    const items = await fetchItems(apifyAuth.apikey);
+    const items = await fetchItems(auth);
     return { disabled: false, options: items };
   } catch (error) {
     return {
@@ -367,7 +362,8 @@ export const createActorIdProperty = () => Property.Dropdown({
   refreshers: ['auth', 'actorSource'],
   options: async (props) => {
     const actorSource = props['actorSource'] as string;
-    return createDropdownOptions(props['auth'], (apiKey) => listActors(apiKey, actorSource));
+    const auth = props['auth'] as OAuth2PropertyValue;
+    return createDropdownOptions(auth, (auth) => listActors(auth, actorSource));
   }
 });
 
@@ -377,7 +373,8 @@ export const createTaskIdProperty = () => Property.Dropdown({
   required: true,
   refreshers: ['auth'],
   options: async (props) => {
-    return createDropdownOptions(props['auth'], listTasks);
+    const auth = props['auth'] as OAuth2PropertyValue;
+    return createDropdownOptions(auth, listTasks);
   }
 });
 
@@ -393,9 +390,9 @@ export const createActorInputProperty = () => Property.DynamicProperties({
   required: true,
   refreshers: ['auth', 'actorid'],
   props: async (propsValue) => {
-    const apiKey = propsValue['auth'] as ApifyAuth;
+    const auth = propsValue['auth'] as OAuth2PropertyValue;
     const actorId = propsValue['actorid'] as unknown as string;
-    const defaultBuild = await fetchActorInputSchema(apiKey.apikey, actorId);
+    const defaultBuild = await fetchActorInputSchema(auth, actorId);
 
     const defaultInputs = defaultBuild ? getDefaultValuesFromBuild(defaultBuild as ActorBuild) : undefined;
 

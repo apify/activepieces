@@ -1,4 +1,4 @@
-import { createAction, Property } from '@activepieces/pieces-framework';
+import { createAction, OAuth2PropertyValue, Property } from '@activepieces/pieces-framework';
 import { apifyAuth } from '../..';
 import { createApifyClient, createDropdownOptions, listDatasets } from '../common';
 
@@ -14,7 +14,7 @@ export const getDatasetItems = createAction({
       displayName: 'Datasets',
       description: 'Select the dataset to get items from.',
       options: async (props) => {
-        return createDropdownOptions(props['auth'], listDatasets);
+        return createDropdownOptions(props['auth'] as OAuth2PropertyValue, listDatasets);
       }
     }),
     offset: Property.Number({
@@ -31,10 +31,9 @@ export const getDatasetItems = createAction({
     })
   },
   async run(context) {
-    const apifyToken = context.auth.apikey;
     const { datasetId, offset, limit } = context.propsValue;
 
-    const client = createApifyClient(apifyToken);
+    const client = createApifyClient(context.auth);
 
     const response = await client.dataset(datasetId).listItems({
       limit,
