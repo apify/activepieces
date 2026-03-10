@@ -2,7 +2,7 @@ import { createAction, Property } from '@activepieces/pieces-framework';
 import { apifyAuth } from '../..';
 import { createApifyClient } from '../common';
 
-const WEBSITE_CONTENT_CRAWLER_ACTOR_ID = 'aYG0l9s7dbB7j3gbS';
+const WEBSITE_CONTENT_CRAWLER_ACTOR_ID = 'apify/website-content-crawler';
 
 export const scrapeSingleUrl = createAction({
   name: 'scrapeSingleUrl',
@@ -75,6 +75,10 @@ export const scrapeSingleUrl = createAction({
       if (run.defaultDatasetId) {
         const result = await client.dataset(run.defaultDatasetId).listItems();
         const firstResultItem = result.items[0];
+
+        if (!firstResultItem) {
+          throw new Error('Scraping returned no results. The page may have been blocked or returned no content.');
+        }
 
         return {
           url: firstResultItem['url'] ?? url,
