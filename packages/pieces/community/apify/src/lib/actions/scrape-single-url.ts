@@ -74,11 +74,12 @@ export const scrapeSingleUrl = createAction({
       // Fetch dataset items if available
       if (run.defaultDatasetId) {
         const result = await client.dataset(run.defaultDatasetId).listItems();
-        const firstResultItem = result.items[0];
 
-        if (!firstResultItem) {
+        if (!result.items || result.items.length === 0) {
           throw new Error('Scraping returned no results. The page may have been blocked or returned no content.');
         }
+
+        const firstResultItem = result.items[0];
 
         return {
           url: firstResultItem['url'] ?? url,
