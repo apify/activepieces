@@ -766,7 +766,7 @@
     },
     "packages/pieces/community/apify": {
       "name": "@activepieces/piece-apify",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "dependencies": {
         "@activepieces/pieces-common": "workspace:*",
         "@activepieces/pieces-framework": "workspace:*",
@@ -8280,7 +8280,7 @@
     },
     "packages/shared": {
       "name": "@activepieces/shared",
-      "version": "0.71.1",
+      "version": "0.71.3",
       "dependencies": {
         "dayjs": "1.11.9",
         "deepmerge-ts": "7.1.0",
